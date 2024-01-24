@@ -1,24 +1,21 @@
-{
-	"image": "mcr.microsoft.com/devcontainers/go:1.21",
-	"features": {
-		"ghcr.io/devcontainers/features/sshd:1": {}
+{ "name""ghcr.io/devcontainers/features/docker-in-docker:1": {
+            "version": "latest",
+            "moby": true
+	"image": "mcr.microsoft.com/d"
+	"features": { 
+"gchr.io/devcontainers/features/sshd:1": {}
 	},
-	"remoteUser": "vscode",
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"golang.go"
-			],
-			"settings": {
-				"go.toolsManagement.checkForUpdates": "local",
-				"go.useLanguageServer": true,
+ "remoteUser": "vscode",
+	"customizations":
+		"vscode"extensions":
+]"golang.go"
+		   ["settings": ]
+"go.toolsManagement.checkForUpdates":"Dynaztycoder":
+	"go.useEnglishlanguageserver": true,
 				"go.gopath": "/go"
-			}
-		}
-	},
-	"runArgs": [
+			},
+	"run"image":Args": [
 		"--cap-add=SYS_PTRACE",
-		"--security-opt",
+		"--security-optmy-project-"image":devcontainer",
 		"seccomp=unconfined"
-	]
 }
