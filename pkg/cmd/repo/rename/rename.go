@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/cli/cli/v2/api"
@@ -32,6 +34,7 @@ type RenameOptions struct {
 	DoConfirm       bool
 	HasRepoOverride bool
 	newRepoSelector string
+	RenameLocalDir  bool
 }
 
 func NewCmdRename(f *cmdutil.Factory, runf func(*RenameOptions) error) *cobra.Command {
@@ -82,6 +85,7 @@ func NewCmdRename(f *cmdutil.Factory, runf func(*RenameOptions) error) *cobra.Co
 	cmd.Flags().BoolVar(&confirm, "confirm", false, "Skip confirmation prompt")
 	_ = cmd.Flags().MarkDeprecated("confirm", "use `--yes` instead")
 	cmd.Flags().BoolVarP(&confirm, "yes", "y", false, "Skip the confirmation prompt")
+	cmd.Flags().BoolVarP(&opts.RenameLocalDir, "rename-dir", "N", false, "Rename directory name of local repository")
 
 	return cmd
 }
@@ -144,6 +148,12 @@ func renameRun(opts *RenameOptions) error {
 		fmt.Fprintf(opts.IO.Out, "%s Updated the %q remote\n", cs.SuccessIcon(), remote.Name)
 	}
 
+	if opts.RenameLocalDir {
+		if err = renameRepoDir(newRepoName, opts); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -169,4 +179,17 @@ func updateRemote(repo ghrepo.Interface, renamed ghrepo.Interface, opts *RenameO
 	err = opts.GitClient.UpdateRemoteURL(context.Background(), remote.Name, remoteURL)
 
 	return remote, err
+}
+
+func renameRepoDir(newRepoName string, opts *RenameOptions) (err error) {
+	var repoDir string
+	if repoDir, err = opts.GitClient.ToplevelDir(context.Background()); err != nil {
+		return err
+	}
+
+	newPath := filepath.Join(filepath.Dir(repoDir), newRepoName)
+	if err = os.Rename(repoDir, newPath); err != nil {
+		return err
+	}
+	return nil
 }
