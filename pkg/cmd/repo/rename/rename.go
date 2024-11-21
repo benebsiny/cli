@@ -85,7 +85,7 @@ func NewCmdRename(f *cmdutil.Factory, runf func(*RenameOptions) error) *cobra.Co
 	cmd.Flags().BoolVar(&confirm, "confirm", false, "Skip confirmation prompt")
 	_ = cmd.Flags().MarkDeprecated("confirm", "use `--yes` instead")
 	cmd.Flags().BoolVarP(&confirm, "yes", "y", false, "Skip the confirmation prompt")
-	cmd.Flags().BoolVarP(&opts.RenameLocalDir, "rename-dir", "N", false, "Rename directory name of local repository")
+	cmd.Flags().BoolVarP(&opts.RenameLocalDir, "rename-dir", "N", false, "Rename the directory of the local repository to match the new repo name")
 
 	return cmd
 }
