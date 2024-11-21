@@ -150,7 +150,7 @@ func renameRun(opts *RenameOptions) error {
 
 	if opts.RenameLocalDir {
 		if err = renameRepoDir(newRepoName, opts); err != nil {
-			return err
+			fmt.Fprintf(opts.IO.ErrOut, "Failed to rename local directory: %v", err)
 		}
 	}
 
