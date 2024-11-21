@@ -148,6 +148,15 @@ func renameRun(opts *RenameOptions) error {
 		fmt.Fprintf(opts.IO.Out, "%s Updated the %q remote\n", cs.SuccessIcon(), remote.Name)
 	}
 
+	if opts.DoConfirm && !opts.RenameLocalDir {
+		var confirmed bool
+		if confirmed, err = opts.Prompter.Confirm("Would you also like to rename the repo directory to ?", false); err != nil {
+			return err
+		}
+		if confirmed {
+			opts.RenameLocalDir = true
+		}
+	}
 	if opts.RenameLocalDir {
 		if err = renameRepoDir(newRepoName, opts); err != nil {
 			fmt.Fprintf(opts.IO.ErrOut, "Failed to rename local directory: %v", err)
