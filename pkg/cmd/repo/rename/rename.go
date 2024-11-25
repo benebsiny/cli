@@ -137,6 +137,20 @@ func renameRun(opts *RenameOptions) error {
 		}
 	}
 
+	var repoDir string
+	if repoDir, err = opts.GitClient.ToplevelDir(context.Background()); err != nil {
+		return err
+	}
+	if opts.RenameLocalDir {
+		var exists bool
+		if exists, err = newRepoDirExists(repoDir, newRepoName); err != nil {
+			return err
+		}
+		if exists {
+			return fmt.Errorf("failed to rename local repository because the folder exists. Please choose another name")
+		}
+	}
+
 	apiClient := api.NewClientFromHTTP(httpClient)
 
 	newRepo, err := api.RenameRepo(apiClient, currRepo, newRepoName)
@@ -146,7 +160,7 @@ func renameRun(opts *RenameOptions) error {
 
 	var renamedLocalDir bool
 	if opts.RenameLocalDir {
-		if err = renameRepoDir(newRepoName, opts); err == nil {
+		if err = renameRepoDir(repoDir, newRepoName); err == nil {
 			renamedLocalDir = true
 		} else {
 			fmt.Fprintf(opts.IO.ErrOut, "Failed to rename local directory: %v\n", err)
@@ -204,15 +218,28 @@ func updateRemote(repo ghrepo.Interface, renamed ghrepo.Interface, opts *RenameO
 	return remote, err
 }
 
-func renameRepoDir(newRepoName string, opts *RenameOptions) (err error) {
-	var repoDir string
-	if repoDir, err = opts.GitClient.ToplevelDir(context.Background()); err != nil {
-		return err
-	}
-
+func renameRepoDir(repoDir string, newRepoName string) (err error) {
 	newPath := filepath.Join(filepath.Dir(repoDir), newRepoName)
 	if err = os.Rename(repoDir, newPath); err != nil {
 		return err
 	}
 	return nil
+}
+
+func newRepoDirExists(repoDir string, newRepoName string) (bool, error) {
+	newPath := filepath.Join(filepath.Dir(repoDir), newRepoName)
+
+	if newPath == repoDir {
+		return false, nil
+	}
+
+	info, err := os.Stat(newPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		} else {
+			return false, err
+		}
+	}
+	return info.IsDir(), nil
 }
