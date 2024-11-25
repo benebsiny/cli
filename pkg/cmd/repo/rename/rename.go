@@ -108,12 +108,28 @@ func renameRun(opts *RenameOptions) error {
 			"Rename %s to:", ghrepo.FullName(currRepo)), ""); err != nil {
 			return err
 		}
+
+		if !opts.RenameLocalDir {
+			var confirmed bool
+			if confirmed, err = opts.Prompter.Confirm("Would you also like to rename the local directory to the same name?", false); err != nil {
+				return err
+			}
+			if confirmed {
+				opts.RenameLocalDir = true
+			}
+		}
 	}
 
 	if opts.DoConfirm {
+		confirmMessage := "Rename %s to %s"
+		if opts.RenameLocalDir {
+			confirmMessage += " and the local directory name"
+		}
+		confirmMessage += "?"
+
 		var confirmed bool
 		if confirmed, err = opts.Prompter.Confirm(fmt.Sprintf(
-			"Rename %s to %s?", ghrepo.FullName(currRepo), newRepoName), false); err != nil {
+			confirmMessage, ghrepo.FullName(currRepo), newRepoName), false); err != nil {
 			return err
 		}
 		if !confirmed {
@@ -128,9 +144,22 @@ func renameRun(opts *RenameOptions) error {
 		return err
 	}
 
+	var renamedLocalDir bool
+	if opts.RenameLocalDir {
+		if err = renameRepoDir(newRepoName, opts); err == nil {
+			renamedLocalDir = true
+		} else {
+			fmt.Fprintf(opts.IO.ErrOut, "Failed to rename local directory: %v\n", err)
+		}
+	}
+
 	cs := opts.IO.ColorScheme()
 	if opts.IO.IsStdoutTTY() {
-		fmt.Fprintf(opts.IO.Out, "%s Renamed repository %s\n", cs.SuccessIcon(), ghrepo.FullName(newRepo))
+		if renamedLocalDir {
+			fmt.Fprintf(opts.IO.Out, "%s Renamed repository %s and local directory\n", cs.SuccessIcon(), ghrepo.FullName(newRepo))
+		} else {
+			fmt.Fprintf(opts.IO.Out, "%s Renamed repository %s\n", cs.SuccessIcon(), ghrepo.FullName(newRepo))
+		}
 	}
 
 	if opts.HasRepoOverride {
@@ -146,21 +175,6 @@ func renameRun(opts *RenameOptions) error {
 		}
 	} else if opts.IO.IsStdoutTTY() {
 		fmt.Fprintf(opts.IO.Out, "%s Updated the %q remote\n", cs.SuccessIcon(), remote.Name)
-	}
-
-	if opts.DoConfirm && !opts.RenameLocalDir {
-		var confirmed bool
-		if confirmed, err = opts.Prompter.Confirm("Would you also like to rename the repo directory to ?", false); err != nil {
-			return err
-		}
-		if confirmed {
-			opts.RenameLocalDir = true
-		}
-	}
-	if opts.RenameLocalDir {
-		if err = renameRepoDir(newRepoName, opts); err != nil {
-			fmt.Fprintf(opts.IO.ErrOut, "Failed to rename local directory: %v", err)
-		}
 	}
 
 	return nil
